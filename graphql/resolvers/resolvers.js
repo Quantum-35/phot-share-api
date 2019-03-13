@@ -91,7 +91,7 @@ module.exports = {
           };
         //   console.log(latestUserinfo)
 
-          const {ops:[user]} = await db.collection('users')
+          const {ops:[user]} = await db.collection("users")
                                 .replaceOne({githubLogin:login}, latestUserinfo, {upsert:true})
           return { user, token: access_token };
       },
