@@ -12,14 +12,14 @@ const mongoConnect = async (callback) => {
         console.log(error);
         throw new Error(error);
     }
-}
+};
 
 const getDb = () => {
     if(_db) {
         return _db;
     }
     throw "No Database Found";
-}
+};
 
 exports.mongoConnect = mongoConnect;
 exports.getDb = getDb;
