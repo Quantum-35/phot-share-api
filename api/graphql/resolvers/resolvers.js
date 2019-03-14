@@ -53,7 +53,7 @@ module.exports = {
             return k
         },
         totalUsers: (parent, args, {db}) => {
-            db.collections('users')
+            return db.collection('users')
                 .estimatedDocumentCount()
         },
         me: (parent, args, {currentUser}) => currentUser
