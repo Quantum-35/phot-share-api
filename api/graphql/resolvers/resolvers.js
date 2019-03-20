@@ -2,7 +2,7 @@ const { GraphQLScalarType } = require('graphql');
 const authorizeWithGithub = require('../../utils/auth');
 const axios = require('axios');
 
-let _id = 0;
+
 const users = [
   {"githubLogin": "quantum", "name": "quantumComputing"},
   {"githubLogin": "hello", "name": "hello world"},
@@ -44,10 +44,16 @@ const tags = [
 
 module.exports = {
     Query: {
-        totalPhotos: () => photos.length,
-        allPhotos: () => photos,
+        totalPhotos: async (parent, args, {db}) => {
+          const data =  await db.collection('photos').estimatedDocumentCount();
+          return data;
+        },
+        allPhotos: async (parent, args, {db}) => {
+          const data =  await db.collection('photos').find().toArray();
+          return data;
+        },
         allUsers: (parent, args, {db}) => {
-            let k = db.collection('users')
+            const k = db.collection('users')
                 .find()
                 .toArray()
             return k
@@ -60,7 +66,7 @@ module.exports = {
 
     },
     Mutation: {
-      async postPhoto(parent, args, {db, currentUser}) {
+      async postPhoto(parent, args, {db, currentUser, pubsub}) {
         if(!currentUser) throw new Error('You are not authorized to perform this action')
         const newPhoto = {
           userID: currentUser.githubLogin,
@@ -68,8 +74,11 @@ module.exports = {
           created: new Date()
         }
         const {insertedIds} = await db.collection('photos').insert(newPhoto);
+        // console.log(insertedIds)
         newPhoto.id = insertedIds[0]
-        return newPhoto
+        pubsub.publish('newPhoto', { newPhoto });
+        // console.log(await pubsub);
+        return newPhoto;
       },
       githubAuth: async(parent, {code}, {db}) => {
           // obtain Data from github
@@ -95,7 +104,7 @@ module.exports = {
                                 .replaceOne({githubLogin:login}, latestUserinfo, {upsert:true})
           return { user, token: access_token };
       },
-      addFakeUsers: async(parent, {count}, {db}) => {
+      addFakeUsers: async(parent, {count}, {db, pubsub}) => {
           const randomUserApi = `https://randomuser.me/api/?results=${count}`;
           const { results } = await axios.get(randomUserApi)
                                     .then(res => res.data)
@@ -106,6 +115,7 @@ module.exports = {
               githubToken: r.login.sha1
           }));
           await db.collection('users').insertMany(users);
+          users.forEach(newUser => pubsub.publish('newUser', {newUser}));
           return users;
       },
       fakeUserAuth: async(parent, {githubLogin}, {db}) => {
@@ -115,6 +125,18 @@ module.exports = {
               token: user.githubToken,
               user
           }
+      }
+    },
+    Subscription: {
+      newPhoto: {
+        subscribe: (parent, args, {pubsub}) => {
+          return pubsub.asyncIterator('newPhoto');
+        }
+      },
+      newUser: {
+        subscribe: (parent, args, {pubsub}) => {
+          return pubsub.asyncIterator('newUser')
+        }
       }
     },
     Photo: {
