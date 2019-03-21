@@ -2,6 +2,7 @@ import React from 'react';
 import { Query } from 'react-apollo';
 import Users, { ROOT_QUERY } from './Users';
 import SignupFakeUsers from '../Auth/Signup/SignupFakeUsers';
+import ListenForUsers from './ListenForUsers';
 
 interface iProps {
     results: any
@@ -16,6 +17,7 @@ export const CurrentUser: React.SFC<iProps> =({results, logout}) => {
                 <div>
                     <SignupFakeUsers />
                     <Users />
+                    <ListenForUsers />
                     <div style={{position:"absolute", top:"1rem", left:"40rem", margin: "1rem 4rem", width: "50rem", borderStyle: "groove", borderRadius: "5rem"}}>
                     <div style={{margin: "3rem 6rem"}}>
                             {console.log(results)}

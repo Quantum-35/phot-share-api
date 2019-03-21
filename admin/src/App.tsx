@@ -1,12 +1,52 @@
 import React, { Component } from 'react';
-import ApolloClient, {gql, InMemoryCache, NormalizedCache, NormalizedCacheObject} from 'apollo-boost';
+import {ApolloClient, gql, InMemoryCache, HttpLink, split, NormalizedCacheObject, ApolloLink} from 'apollo-boost';
+import { WebSocketLink } from 'apollo-link-ws';
+import { getMainDefinition } from 'apollo-utilities';
 import { ApolloProvider, Mutation } from 'react-apollo';
 import { persistCache } from 'apollo-cache-persist';
 import MainAuth from './container/Auth/MainAuth/MainAuth';
 import { ROOT_QUERY } from './container/Users/Users';
 import { withRouter } from 'react-router';
 import { PersistentStorage, PersistedData } from 'apollo-cache-persist/types';
-import { async } from 'q';
+
+const cache = new InMemoryCache();
+persistCache({
+  cache,
+  storage: window.localStorage as PersistentStorage<PersistedData<NormalizedCacheObject>>
+})
+if(localStorage['apollo-cache-persist']) {
+  let cachedData = JSON.parse(localStorage['apollo-cache-persist']);
+  cache.restore(cachedData)
+}
+
+const httpLink = new HttpLink({uri: process.env.REACT_APP_BASE_URL});
+const wsLink = new WebSocketLink({
+  uri: `${process.env.REACT_APP_BASE_URL_SUBSCRIPTION}`,
+  options: { reconnect: true }
+});
+const authLink = new ApolloLink((operation: any, forward: any) => {
+  operation.setContext((context:any) => ({
+    headers: {
+      ...context.headers,
+      authorization: localStorage.getItem('token')
+    }
+  }));
+  return forward(operation);
+})
+const httpAuthLink = authLink.concat(httpLink);
+const link = split(
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query);
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  httpAuthLink,
+);
+
+const client = new ApolloClient({
+  cache,
+  link,
+}) as any;
 
 interface iState {
   loggedIn: boolean,
@@ -50,27 +90,6 @@ class App extends Component<iProps, iState> {
   }
   
   render() {
-    const cache = new InMemoryCache();
-    persistCache({
-      cache,
-      storage: window.localStorage as PersistentStorage<PersistedData<NormalizedCacheObject>>
-    })
-    if(localStorage['apollo-cache-persist']) {
-      let cachedData = JSON.parse(localStorage['apollo-cache-persist']);
-      cache.restore(cachedData)
-    }
-    const client = new ApolloClient({
-      cache,
-      uri: process.env.REACT_APP_BASE_URL,
-      request: (operation):any => {
-        operation.setContext((context:any) => ({
-          headers: {
-            ...context.headers,
-            authorization: localStorage.getItem('token')
-          }
-        }))
-      }
-    });
     const {loggedIn} = this.state;
     return (
       <ApolloProvider client={client}>
