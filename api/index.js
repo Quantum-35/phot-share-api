@@ -26,6 +26,7 @@ mongoConnect(() =>{
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    engine: true,
     context: async({req, connection}) => {
       const githubToken = req ? req.headers.authorization : connection.context.Authorization;
       const currentUser = await db.collection('users').findOne({ githubToken });
