@@ -4,6 +4,8 @@ const expressPlayground = require('graphql-playground-middleware-express').defau
 const { readFileSync } = require('fs');
 const resolvers = require('./graphql/resolvers/resolvers');
 const { createServer } = require('http');
+const path = require('path');
+const cors = require('cors');
 require('dotenv').config();
 
 const mongoConnect = require('./utils/Database').mongoConnect;
@@ -15,6 +17,8 @@ mongoConnect(() =>{
   const db = getDb();
   const pubsub = new PubSub();
   const app = express();
+  app.use(cors());
+  app.use('/img/photos', express.static(path.join(__dirname, 'graphql', 'assets', 'photos')))
   app.get('/', (req, res) => res.end('Welcome to PhotoShare API'));
   app.get('/playground', expressPlayground({ endpoint: '/graphql'}));
 

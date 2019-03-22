@@ -1,5 +1,7 @@
 const { GraphQLScalarType } = require('graphql');
 const authorizeWithGithub = require('../../utils/auth');
+const uploadStream = require('../../utils/files');
+const path = require('path');
 const axios = require('axios');
 
 
@@ -76,8 +78,11 @@ module.exports = {
         const {insertedIds} = await db.collection('photos').insert(newPhoto);
         // console.log(insertedIds)
         newPhoto.id = insertedIds[0]
+        console.log(newPhoto);
+        const toPath = path.join(__dirname, '..', 'assets', 'photos', `${newPhoto.id}.jpg`);
+        const { stream } = args.input.file;
+        await uploadStream(stream, toPath);
         pubsub.publish('newPhoto', { newPhoto });
-        // console.log(await pubsub);
         return newPhoto;
       },
       githubAuth: async(parent, {code}, {db}) => {
@@ -141,7 +146,7 @@ module.exports = {
     },
     Photo: {
       id: parent => parent.id || parent._id,
-      url: parent => `http://quantum.com/img/${parent._id}.jpg`,
+      url: parent => `/img/${parent._id}.jpg`,
       postedBy: (parent, args, {db}) => {
         return db.collection('users').findOne({githubLogin: parent.userID})
       },
