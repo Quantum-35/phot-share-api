@@ -8,6 +8,7 @@ import MainAuth from './container/Auth/MainAuth/MainAuth';
 import { ROOT_QUERY } from './container/Users/Users';
 import { withRouter } from 'react-router';
 import { PersistentStorage, PersistedData } from 'apollo-cache-persist/types';
+import { createUploadLink } from 'apollo-upload-client';
 
 const cache = new InMemoryCache();
 persistCache({
@@ -19,7 +20,7 @@ if(localStorage['apollo-cache-persist']) {
   cache.restore(cachedData)
 }
 
-const httpLink = new HttpLink({uri: process.env.REACT_APP_BASE_URL});
+const httpLink = createUploadLink({uri: process.env.REACT_APP_BASE_URL});
 const wsLink = new WebSocketLink({
   uri: `${process.env.REACT_APP_BASE_URL_SUBSCRIPTION}`,
   options: { reconnect: true }

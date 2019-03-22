@@ -12,6 +12,12 @@ export const ROOT_QUERY = gql`
         totalUsers
         allUsers {...userInfo}
         me {...userInfo}
+        allPhotos {
+            id
+            name
+            url
+            postedBy {...userInfo}
+        }
     }
 
     fragment userInfo on User {

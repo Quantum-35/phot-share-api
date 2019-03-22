@@ -1,5 +1,6 @@
 
 scalar DateTime
+# scalar Upload
 
 type User {
   githubLogin: ID!,
@@ -46,6 +47,7 @@ input PostPhotoInput {
   name: String!,
   category: PhotoCategory = PORTRAIT,
   description: String
+  file: Upload!
 }
 
 # Returns a newly created Photo from the Mutation.
